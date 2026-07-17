@@ -1,0 +1,22 @@
+# Vendored upstream clone (facebookresearch/sam2) -- clone separately:
+#   git clone https://github.com/facebookresearch/sam2.git
+sam2/
+
+# Python virtualenv
+.venv/
+__pycache__/
+*.pyc
+
+# Model checkpoints
+*.pt
+*.pth
+
+# Generated ONNX exports / TensorRT engines (reproduce via trt/export_*.py
+# and trt/build_*_engine.sh -- large binaries, not source)
+*.onnx
+*.engine
+
+# Generated overlay outputs (reproduce via the example/driver scripts)
+examples/segmented/
+examples/segmented_baseline/
+trt/segmented_trt/
