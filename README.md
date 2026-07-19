@@ -8,6 +8,8 @@ TensorRT engine pipeline evaluated against it.
 Full write-up, methodology, and every result table lives in
 [`NOTES.md`](NOTES.md); this README is the condensed quick start + summary.
 
+An interactive visualization of for the repository [sam2-speedup-viz.html](https://github.com/sstc-aiteam/sam2-speedup/blob/main/sam2-speedup-viz.html) 
+
 ## Quick start
 
 Target device: Jetson AGX Orin, JetPack 6 / L4T 36.4.7, CUDA 12.6, TensorRT
