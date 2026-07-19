@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SAM2 Speedup — Jetson AGX Orin</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0B0E14;
+    --surface: #131820;
+    --surface2: #1A2030;
+    --border: #252D3D;
+    --text: #D0D8E8;
+    --text-dim: #6B7A94;
+    --accent: #00E59B;
+    --accent2: #00B8FF;
+    --accent3: #FF6B4A;
+    --accent4: #A78BFA;
+    --warn: #FBBF24;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* ── Hero ── */
+  .hero {
+    position: relative;
+    padding: 80px 40px 60px;
+    text-align: center;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -200px; left: 50%; transform: translateX(-50%);
+    width: 800px; height: 800px;
+    background: radial-gradient(circle, rgba(0,229,155,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-badge {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    border: 1px solid rgba(0,229,155,0.3);
+    padding: 6px 16px;
+    border-radius: 20px;
+    margin-bottom: 24px;
+  }
+  .hero h1 {
+    font-size: clamp(2.4rem, 5vw, 4rem);
+    font-weight: 700;
+    letter-spacing: -1.5px;
+    margin-bottom: 16px;
+    background: linear-gradient(135deg, #fff 30%, var(--accent) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .hero-sub {
+    font-size: 1.1rem;
+    color: var(--text-dim);
+    max-width: 640px;
+    margin: 0 auto 36px;
+    font-weight: 300;
+  }
+  .hero-stats {
+    display: flex;
+    justify-content: center;
+    gap: 48px;
+    flex-wrap: wrap;
+  }
+  .hero-stat {
+    text-align: center;
+  }
+  .hero-stat-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 2.4rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .hero-stat-value.blue { color: var(--accent2); }
+  .hero-stat-value.orange { color: var(--accent3); }
+  .hero-stat-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+
+  /* ── Container ── */
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  /* ── Section ── */
+  section {
+    margin-bottom: 80px;
+  }
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+  .section-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-bottom: 32px;
+  }
+
+  /* ── Architecture Cards ── */
+  .arch-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+  }
+  .arch-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    transition: border-color 0.3s, transform 0.3s;
+  }
+  .arch-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-4px);
+  }
+  .arch-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    margin-bottom: 16px;
+  }
+  .arch-icon.green { background: rgba(0,229,155,0.12); color: var(--accent); }
+  .arch-icon.blue { background: rgba(0,184,255,0.12); color: var(--accent2); }
+  .arch-icon.orange { background: rgba(255,107,74,0.12); color: var(--accent3); }
+  .arch-icon.purple { background: rgba(167,139,250,0.12); color: var(--accent4); }
+  .arch-card h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .arch-card p {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  /* ── Pipeline Diagram ── */
+  .pipeline {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    flex-wrap: wrap;
+    margin: 40px 0 16px;
+    padding: 32px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow-x: auto;
+  }
+  .pipe-node {
+    padding: 14px 22px;
+    border-radius: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    font-weight: 600;
+    white-space: nowrap;
+    text-align: center;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    min-width: 100px;
+  }
+  .pipe-node.highlight {
+    border-color: var(--accent);
+    box-shadow: 0 0 20px rgba(0,229,155,0.15);
+    color: var(--accent);
+  }
+  .pipe-node.trt {
+    border-color: var(--accent3);
+    box-shadow: 0 0 20px rgba(255,107,74,0.15);
+    color: var(--accent3);
+  }
+  .pipe-arrow {
+    font-size: 1.2rem;
+    color: var(--text-dim);
+    margin: 0 6px;
+    flex-shrink: 0;
+  }
+  .pipe-label {
+    text-align: center;
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+
+  /* ── Benchmark Charts ── */
+  .bench-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    margin-bottom: 24px;
+  }
+  .bench-card h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 24px;
+  }
+
+  .bar-chart { display: flex; flex-direction: column; gap: 14px; }
+  .bar-row {
+    display: grid;
+    grid-template-columns: 160px 1fr 80px;
+    align-items: center;
+    gap: 16px;
+  }
+  @media (max-width: 600px) {
+    .bar-row { grid-template-columns: 100px 1fr 60px; }
+  }
+  .bar-label {
+    font-size: 0.82rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text);
+    text-align: right;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .bar-track {
+    height: 32px;
+    background: var(--surface2);
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 6px;
+    transition: width 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+    position: relative;
+  }
+  .bar-fill.green { background: linear-gradient(90deg, rgba(0,229,155,0.7), var(--accent)); }
+  .bar-fill.blue { background: linear-gradient(90deg, rgba(0,184,255,0.7), var(--accent2)); }
+  .bar-fill.orange { background: linear-gradient(90deg, rgba(255,107,74,0.7), var(--accent3)); }
+  .bar-fill.dim { background: linear-gradient(90deg, rgba(107,122,148,0.4), rgba(107,122,148,0.6)); }
+  .bar-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-align: right;
+  }
+
+  /* ── Speedup Badges ── */
+  .speedup-badge {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 4px;
+    margin-left: 6px;
+  }
+  .speedup-badge.good { background: rgba(0,229,155,0.15); color: var(--accent); }
+  .speedup-badge.great { background: rgba(0,229,155,0.25); color: #00ffaa; }
+  .speedup-badge.neutral { background: rgba(251,191,36,0.15); color: var(--warn); }
+
+  /* ── Segment-Everything Table ── */
+  .data-table-wrap {
+    overflow-x: auto;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+  }
+  thead {
+    background: var(--surface2);
+  }
+  th {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    padding: 14px 16px;
+    text-align: left;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(37,45,61,0.5);
+    white-space: nowrap;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(0,229,155,0.03); }
+  .iou-cell {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+  }
+
+  /* ── Toggle Tabs ── */
+  .tab-bar {
+    display: flex;
+    gap: 4px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 4px;
+    border-radius: 10px;
+    margin-bottom: 24px;
+    width: fit-content;
+  }
+  .tab-btn {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 500;
+    padding: 8px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    background: transparent;
+    color: var(--text-dim);
+    transition: all 0.25s;
+  }
+  .tab-btn.active {
+    background: var(--accent);
+    color: var(--bg);
+    font-weight: 600;
+  }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* ── Conclusion Card ── */
+  .conclusion {
+    background: linear-gradient(135deg, rgba(0,229,155,0.06), rgba(0,184,255,0.06));
+    border: 1px solid rgba(0,229,155,0.2);
+    border-radius: 16px;
+    padding: 40px;
+  }
+  .conclusion h3 {
+    font-size: 1.3rem;
+    margin-bottom: 16px;
+  }
+  .conclusion p {
+    color: var(--text-dim);
+    font-size: 0.95rem;
+    line-height: 1.7;
+    max-width: 750px;
+  }
+  .conclusion .highlight-text {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  /* ── Repo Info ── */
+  .repo-bar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 60px;
+  }
+  .repo-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 14px;
+  }
+  .repo-chip .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .dot.python { background: #3572A5; }
+  .dot.shell { background: #89e051; }
+
+  /* ── Footer ── */
+  footer {
+    text-align: center;
+    padding: 40px 24px;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    border-top: 1px solid var(--border);
+  }
+  footer a { color: var(--accent); text-decoration: none; }
+
+  /* ── Animations ── */
+  @media (prefers-reduced-motion: no-preference) {
+    .fade-up {
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeUp 0.6s ease forwards;
+    }
+    @keyframes fadeUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .fade-up:nth-child(2) { animation-delay: 0.1s; }
+    .fade-up:nth-child(3) { animation-delay: 0.2s; }
+    .fade-up:nth-child(4) { animation-delay: 0.3s; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════ HERO ═══════ -->
+<div class="hero">
+  <div class="hero-badge">sstc-aiteam / sam2-speedup</div>
+  <h1>SAM2 Speedup</h1>
+  <p class="hero-sub">
+    Inference acceleration for SAM2 <code style="color:var(--accent2)">sam2_hiera_small</code> on Jetson AGX Orin — fp16, torch.compile, and TensorRT pipelines benchmarked head-to-head.
+  </p>
+  <div class="hero-stats">
+    <div class="hero-stat fade-up">
+      <div class="hero-stat-value">2.9×</div>
+      <div class="hero-stat-label">Single-Point Speedup</div>
+    </div>
+    <div class="hero-stat fade-up">
+      <div class="hero-stat-value blue">2.25×</div>
+      <div class="hero-stat-label">Segment-Everything</div>
+    </div>
+    <div class="hero-stat fade-up">
+      <div class="hero-stat-value orange">99.96%</div>
+      <div class="hero-stat-label">IoU Accuracy</div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- ═══════ REPO META ═══════ -->
+  <div class="repo-bar">
+    <a href="https://github.com/sstc-aiteam/sam2-speedup" target="_blank" style="text-decoration:none;">
+      <span class="repo-chip" style="border-color:var(--accent);color:var(--accent);">↗ GitHub</span>
+    </a>
+    <span class="repo-chip"><span class="dot python"></span> Python 97.2%</span>
+    <span class="repo-chip"><span class="dot shell"></span> Shell 2.8%</span>
+    <span class="repo-chip">📄 MIT License</span>
+    <span class="repo-chip">🎯 JetPack 6 / CUDA 12.6</span>
+  </div>
+
+  <!-- ═══════ OPTIMIZATION PIPELINE ═══════ -->
+  <section>
+    <div class="section-label">Pipeline</div>
+    <div class="section-title">Optimization Strategy</div>
+
+    <div class="pipeline">
+      <div class="pipe-node">Image Input</div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-node highlight">Image Encoder<br><span style="font-size:0.65rem;opacity:0.7">fp16 + compile</span></div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-node">Prompt Encoder</div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-node highlight">Mask Decoder<br><span style="font-size:0.65rem;opacity:0.7">fp16 + compile</span></div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-node">Post-process<br><span style="font-size:0.65rem;opacity:0.7">NMS / RLE</span></div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-node">Masks</div>
+    </div>
+    <div class="pipe-label" style="text-align:center;margin-bottom:12px;">
+      <span style="color:var(--accent)">■</span> compiled components &nbsp;&nbsp;
+      <span style="color:var(--text-dim)">■</span> unchanged
+    </div>
+  </section>
+
+  <!-- ═══════ REPO LAYOUT ═══════ -->
+  <section>
+    <div class="section-label">Structure</div>
+    <div class="section-title">Repository Layout</div>
+    <div class="arch-grid">
+      <div class="arch-card fade-up">
+        <div class="arch-icon green">⚡</div>
+        <h3>bench/</h3>
+        <p>dtype & compile sweep benchmarks, accuracy checks for single point-prompt image predictor, plus video predictor FPS.</p>
+      </div>
+      <div class="arch-card fade-up">
+        <div class="arch-icon blue">🖼</div>
+        <h3>examples/</h3>
+        <p>Segment-everything examples: fp16+compile, fp32 eager baseline, and head-to-head comparison scripts.</p>
+      </div>
+      <div class="arch-card fade-up">
+        <div class="arch-icon orange">🔧</div>
+        <h3>trt/</h3>
+        <p>ONNX export, TensorRT engine builds, custom SAM2ImagePredictor subclass routing through TRT engines.</p>
+      </div>
+      <div class="arch-card fade-up">
+        <div class="arch-icon purple">📋</div>
+        <h3>NOTES.md</h3>
+        <p>Full session notes: environment setup gotchas, every benchmark, and reasoning behind each optimization decision.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ BENCHMARKS ═══════ -->
+  <section>
+    <div class="section-label">Performance</div>
+    <div class="section-title">Benchmark Results</div>
+
+    <!-- Single Point Predict -->
+    <div class="bench-card fade-up">
+      <h3>Single Point-Prompt Predict</h3>
+      <div class="bar-chart">
+        <div class="bar-row">
+          <div class="bar-label">fp32 baseline</div>
+          <div class="bar-track">
+            <div class="bar-fill dim" style="width: 100%;"></div>
+          </div>
+          <div class="bar-value" style="color:var(--text-dim)">223 ms</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">fp16 + compile</div>
+          <div class="bar-track">
+            <div class="bar-fill green" style="width: 34.5%;"></div>
+          </div>
+          <div class="bar-value" style="color:var(--accent)">77 ms <span class="speedup-badge great">2.9×</span></div>
+        </div>
+      </div>
+      <p style="font-size:0.78rem;color:var(--text-dim);margin-top:16px;">
+        99.96% IoU, 0.0002 score delta — effectively lossless.
+      </p>
+    </div>
+
+    <!-- Segment Everything - Tabbed -->
+    <div class="bench-card fade-up">
+      <h3>Segment-Everything — Per-Image Breakdown</h3>
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('compile')">fp16 + compile</button>
+        <button class="tab-btn" onclick="switchTab('trt-base')">TRT vs Baseline</button>
+        <button class="tab-btn" onclick="switchTab('trt-compile')">TRT vs Compile</button>
+      </div>
+
+      <!-- Tab 1: fp16+compile vs baseline -->
+      <div id="tab-compile" class="tab-content active">
+        <div class="data-table-wrap">
+          <table>
+            <thead>
+              <tr><th>Image</th><th>Masks</th><th>Baseline</th><th>fp16+compile</th><th>Speedup</th><th>Coverage IoU</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>cars.jpg</td><td>32</td><td>10.31 s</td><td style="color:var(--accent)">6.73 s</td><td><span class="speedup-badge good">1.53×</span></td><td class="iou-cell" style="color:var(--accent)">0.9992</td></tr>
+              <tr><td>groceries.jpg</td><td>57</td><td>6.56 s</td><td style="color:var(--accent)">2.11 s</td><td><span class="speedup-badge great">3.11×</span></td><td class="iou-cell" style="color:var(--accent)">0.9991</td></tr>
+              <tr><td>rgb_…139762.png</td><td>19</td><td>6.53 s</td><td style="color:var(--accent)">2.13 s</td><td><span class="speedup-badge great">3.07×</span></td><td class="iou-cell" style="color:var(--accent)">0.9999</td></tr>
+              <tr><td>rgb_…959061.png</td><td>25</td><td>7.67 s</td><td style="color:var(--accent)">3.06 s</td><td><span class="speedup-badge good">2.51×</span></td><td class="iou-cell" style="color:var(--accent)">0.9999</td></tr>
+              <tr><td>rgb_…123550.png</td><td>28</td><td>7.51 s</td><td style="color:var(--accent)">2.95 s</td><td><span class="speedup-badge good">2.54×</span></td><td class="iou-cell" style="color:var(--accent)">0.9999</td></tr>
+              <tr><td>rgb_…674519.png</td><td>25</td><td>7.50 s</td><td style="color:var(--accent)">2.98 s</td><td><span class="speedup-badge good">2.52×</span></td><td class="iou-cell" style="color:var(--accent)">0.9999</td></tr>
+              <tr><td>truck.jpg</td><td>36</td><td>9.67 s</td><td style="color:var(--accent)">4.83 s</td><td><span class="speedup-badge good">2.00×</span></td><td class="iou-cell" style="color:var(--accent)">1.0000</td></tr>
+              <tr style="background:rgba(0,229,155,0.05);font-weight:600;">
+                <td>TOTAL</td><td>—</td><td>55.8 s</td><td style="color:var(--accent)">24.8 s</td><td><span class="speedup-badge great">2.25×</span></td><td class="iou-cell" style="color:var(--accent)">≥ 0.999</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab 2: TRT vs baseline -->
+      <div id="tab-trt-base" class="tab-content">
+        <div class="data-table-wrap">
+          <table>
+            <thead>
+              <tr><th>Image</th><th>Masks (base/trt)</th><th>Baseline</th><th>TensorRT</th><th>Speedup</th><th>Coverage IoU</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>cars.jpg</td><td>32 / 33</td><td>10.33 s</td><td style="color:var(--accent3)">7.21 s</td><td><span class="speedup-badge good">1.43×</span></td><td class="iou-cell" style="color:var(--accent3)">0.9998</td></tr>
+              <tr><td>groceries.jpg</td><td>57 / 57</td><td>6.46 s</td><td style="color:var(--accent3)">1.93 s</td><td><span class="speedup-badge great">3.36×</span></td><td class="iou-cell" style="color:var(--accent3)">0.9995</td></tr>
+              <tr><td>rgb_…139762.png</td><td>19 / 19</td><td>6.44 s</td><td style="color:var(--accent3)">1.90 s</td><td><span class="speedup-badge great">3.40×</span></td><td class="iou-cell" style="color:var(--accent3)">0.9991</td></tr>
+              <tr><td>rgb_…959061.png</td><td>25 / 25</td><td>7.46 s</td><td style="color:var(--accent3)">2.75 s</td><td><span class="speedup-badge good">2.71×</span></td><td class="iou-cell" style="color:var(--accent3)">0.9995</td></tr>
+              <tr><td>rgb_…123550.png</td><td>28 / 27</td><td>7.35 s</td><td style="color:var(--accent3)">2.65 s</td><td><span class="speedup-badge good">2.77×</span></td><td class="iou-cell" style="color:var(--accent3)">0.9997</td></tr>
+              <tr><td>rgb_…674519.png</td><td>25 / 25</td><td>7.35 s</td><td style="color:var(--accent3)">2.67 s</td><td><span class="speedup-badge good">2.75×</span></td><td class="iou-cell" style="color:var(--accent3)">0.9999</td></tr>
+              <tr><td>truck.jpg</td><td>36 / 36</td><td>9.32 s</td><td style="color:var(--accent3)">4.48 s</td><td><span class="speedup-badge good">2.08×</span></td><td class="iou-cell" style="color:var(--accent3)">0.9983</td></tr>
+              <tr style="background:rgba(255,107,74,0.05);font-weight:600;">
+                <td>TOTAL</td><td>—</td><td>54.7 s</td><td style="color:var(--accent3)">23.6 s</td><td><span class="speedup-badge great">2.32×</span></td><td class="iou-cell" style="color:var(--accent3)">≥ 0.998</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab 3: TRT vs compile -->
+      <div id="tab-trt-compile" class="tab-content">
+        <div style="padding:24px;text-align:center;">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:2.4rem;font-weight:700;color:var(--warn);margin-bottom:8px;">1.03×</div>
+          <div style="font-size:0.85rem;color:var(--text-dim);max-width:500px;margin:0 auto;line-height:1.6;">
+            TRT vs fp16+compile is essentially a wash (26.1 s → 25.3 s total). The TRT decoder kernel is 2–3× faster per-call, but Python-side postprocessing (stability score, box NMS, RLE encoding) dominates wall time and caps the end-to-end win.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Speedup Comparison Bars -->
+    <div class="bench-card fade-up">
+      <h3>Overall Speedup Comparison</h3>
+      <div class="bar-chart">
+        <div class="bar-row">
+          <div class="bar-label">fp32 Baseline</div>
+          <div class="bar-track">
+            <div class="bar-fill dim" style="width: 33%;"></div>
+          </div>
+          <div class="bar-value" style="color:var(--text-dim)">1.0×</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">TRT vs Compile</div>
+          <div class="bar-track">
+            <div class="bar-fill orange" style="width: 34%;"></div>
+          </div>
+          <div class="bar-value" style="color:var(--accent3)">1.03×</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">fp16 + compile</div>
+          <div class="bar-track">
+            <div class="bar-fill green" style="width: 74%;"></div>
+          </div>
+          <div class="bar-value" style="color:var(--accent)">2.25×</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">TRT vs Baseline</div>
+          <div class="bar-track">
+            <div class="bar-fill blue" style="width: 77%;"></div>
+          </div>
+          <div class="bar-value" style="color:var(--accent2)">2.32×</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Single-Point</div>
+          <div class="bar-track">
+            <div class="bar-fill green" style="width: 96%;"></div>
+          </div>
+          <div class="bar-value" style="color:var(--accent)">2.9×</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ CONCLUSION ═══════ -->
+  <section>
+    <div class="conclusion fade-up">
+      <div class="section-label" style="margin-bottom:12px;">Key Finding</div>
+      <h3>torch.compile wins the cost–benefit tradeoff</h3>
+      <p>
+        The <span class="highlight-text">fp16 + torch.compile</span> pipeline delivers a
+        <span class="highlight-text">2.25× end-to-end speedup</span> with effectively lossless accuracy
+        (IoU ≥ 0.999) and zero infrastructure beyond standard PyTorch.
+        TensorRT matches this at <span style="color:var(--accent3)">2.32×</span> but adds ONNX export patches,
+        dynamic-shape engine builds, and a custom runtime — all for a marginal 3% gain.
+        The real bottleneck has shifted: once neural-net inference is fast, Python-side postprocessing
+        (NMS, stability scoring, RLE) dominates wall time.
+      </p>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  Data sourced from <a href="https://github.com/sstc-aiteam/sam2-speedup" target="_blank">sstc-aiteam/sam2-speedup</a> · Jetson AGX Orin · JetPack 6 · CUDA 12.6 · TensorRT 10.3
+</footer>
+
+<script>
+function switchTab(id) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// Animate bars on scroll
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.querySelectorAll('.bar-fill').forEach(bar => {
+        const w = bar.style.width;
+        bar.style.width = '0%';
+        requestAnimationFrame(() => { bar.style.width = w; });
+      });
+      observer.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.2 });
+document.querySelectorAll('.bar-chart').forEach(c => observer.observe(c));
+</script>
+</body>
+</html>
