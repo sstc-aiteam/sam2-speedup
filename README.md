@@ -8,7 +8,7 @@ TensorRT engine pipeline evaluated against it.
 Full write-up, methodology, and every result table lives in
 [`NOTES.md`](NOTES.md); this README is the condensed quick start + summary.
 
-An interactive visualization of for the repository [sam2-speedup-viz.html](https://github.com/sstc-aiteam/sam2-speedup/blob/main/sam2-speedup-viz.html) 
+An interactive visualization of for the repository [Sam2 Speed-up HTML](https://sstc-aiteam.github.io/sam2-speedup/)
 
 ## Quick start
 
