@@ -494,30 +494,6 @@
     <div class="section-label">Performance</div>
     <div class="section-title">Benchmark Results</div>
 
-    <!-- Single Point Predict -->
-    <div class="bench-card fade-up">
-      <h3>Single Point-Prompt Predict</h3>
-      <div class="bar-chart">
-        <div class="bar-row">
-          <div class="bar-label">fp32 baseline</div>
-          <div class="bar-track">
-            <div class="bar-fill dim" style="width: 100%;"></div>
-          </div>
-          <div class="bar-value" style="color:var(--text-dim)">223 ms</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label">fp16 + compile</div>
-          <div class="bar-track">
-            <div class="bar-fill green" style="width: 34.5%;"></div>
-          </div>
-          <div class="bar-value" style="color:var(--accent)">77 ms <span class="speedup-badge great">2.9×</span></div>
-        </div>
-      </div>
-      <p style="font-size:0.78rem;color:var(--text-dim);margin-top:16px;">
-        99.96% IoU, 0.0002 score delta — effectively lossless.
-      </p>
-    </div>
-
     <!-- Segment Everything - Tabbed -->
     <div class="bench-card fade-up">
       <h3>Segment-Everything — Per-Image Breakdown</h3>
@@ -548,6 +524,30 @@
             </tbody>
           </table>
         </div>
+      </div>
+
+      <!-- Single Point Predict -->
+      <div class="bench-card fade-up">
+      <h3>Single Point-Prompt Predict</h3>
+      <div class="bar-chart">
+        <div class="bar-row">
+          <div class="bar-label">fp32 baseline</div>
+          <div class="bar-track">
+            <div class="bar-fill dim" style="width: 100%;"></div>
+          </div>
+          <div class="bar-value" style="color:var(--text-dim)">223 ms</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">fp16 + compile</div>
+          <div class="bar-track">
+            <div class="bar-fill green" style="width: 34.5%;"></div>
+          </div>
+          <div class="bar-value" style="color:var(--accent)">77 ms <span class="speedup-badge great">2.9×</span></div>
+        </div>
+      </div>
+      <p style="font-size:0.78rem;color:var(--text-dim);margin-top:16px;">
+        99.96% IoU, 0.0002 score delta — effectively lossless.
+      </p>
       </div>
 
       <!-- Tab 2: TRT vs baseline -->
