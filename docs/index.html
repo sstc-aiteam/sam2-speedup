@@ -432,18 +432,18 @@
 <!-- ═══════ HERO ═══════ -->
 <div class="hero">
   <div class="hero-badge">sstc-aiteam / sam2-speedup</div>
-  <h1>SAM2 Speedup</h1>
+  <h1>SAM2 Speedup on Jetson AGX Orin</h1>
   <p class="hero-sub">
     Inference acceleration for SAM2 <code style="color:var(--accent2)">sam2_hiera_small</code> on Jetson AGX Orin — fp16, torch.compile, and TensorRT pipelines benchmarked head-to-head.
   </p>
   <div class="hero-stats">
     <div class="hero-stat fade-up">
-      <div class="hero-stat-value">2.9×</div>
-      <div class="hero-stat-label">Single-Point Speedup</div>
-    </div>
-    <div class="hero-stat fade-up">
       <div class="hero-stat-value blue">2.25×</div>
       <div class="hero-stat-label">Segment-Everything</div>
+    </div>
+    <div class="hero-stat fade-up">
+      <div class="hero-stat-value">2.9×</div>
+      <div class="hero-stat-label">Single-Point Speedup</div>
     </div>
     <div class="hero-stat fade-up">
       <div class="hero-stat-value orange">99.96%</div>
@@ -486,34 +486,6 @@
     <div class="pipe-label" style="text-align:center;margin-bottom:12px;">
       <span style="color:var(--accent)">■</span> compiled components &nbsp;&nbsp;
       <span style="color:var(--text-dim)">■</span> unchanged
-    </div>
-  </section>
-
-  <!-- ═══════ REPO LAYOUT ═══════ -->
-  <section>
-    <div class="section-label">Structure</div>
-    <div class="section-title">Repository Layout</div>
-    <div class="arch-grid">
-      <div class="arch-card fade-up">
-        <div class="arch-icon green">⚡</div>
-        <h3>bench/</h3>
-        <p>dtype & compile sweep benchmarks, accuracy checks for single point-prompt image predictor, plus video predictor FPS.</p>
-      </div>
-      <div class="arch-card fade-up">
-        <div class="arch-icon blue">🖼</div>
-        <h3>examples/</h3>
-        <p>Segment-everything examples: fp16+compile, fp32 eager baseline, and head-to-head comparison scripts.</p>
-      </div>
-      <div class="arch-card fade-up">
-        <div class="arch-icon orange">🔧</div>
-        <h3>trt/</h3>
-        <p>ONNX export, TensorRT engine builds, custom SAM2ImagePredictor subclass routing through TRT engines.</p>
-      </div>
-      <div class="arch-card fade-up">
-        <div class="arch-icon purple">📋</div>
-        <h3>NOTES.md</h3>
-        <p>Full session notes: environment setup gotchas, every benchmark, and reasoning behind each optimization decision.</p>
-      </div>
     </div>
   </section>
 
@@ -671,6 +643,34 @@
       </p>
     </div>
   </section>
+
+    <!-- ═══════ REPO LAYOUT ═══════ -->
+    <section>
+      <div class="section-label">Structure</div>
+      <div class="section-title">Repository Layout</div>
+      <div class="arch-grid">
+        <div class="arch-card fade-up">
+          <div class="arch-icon green">⚡</div>
+          <h3>bench/</h3>
+          <p>dtype & compile sweep benchmarks, accuracy checks for single point-prompt image predictor, plus video predictor FPS.</p>
+        </div>
+        <div class="arch-card fade-up">
+          <div class="arch-icon blue">🖼</div>
+          <h3>examples/</h3>
+          <p>Segment-everything examples: fp16+compile, fp32 eager baseline, and head-to-head comparison scripts.</p>
+        </div>
+        <div class="arch-card fade-up">
+          <div class="arch-icon orange">🔧</div>
+          <h3>trt/</h3>
+          <p>ONNX export, TensorRT engine builds, custom SAM2ImagePredictor subclass routing through TRT engines.</p>
+        </div>
+        <div class="arch-card fade-up">
+          <div class="arch-icon purple">📋</div>
+          <h3>NOTES.md</h3>
+          <p>Full session notes: environment setup gotchas, every benchmark, and reasoning behind each optimization decision.</p>
+        </div>
+      </div>
+    </section>
 
 </div>
 
